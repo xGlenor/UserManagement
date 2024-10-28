@@ -1,0 +1,67 @@
+﻿@model UserViewModel
+@{
+    ViewData["Title"] = "Modyfikuj Użytkownika";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form asp-action="Modify" method="post" class="mt-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="User.Id"/>
+
+    <div class="form-group">
+        <label asp-for="User.UserName" class="control-label"></label>
+        <input asp-for="User.UserName" class="form-control"/>
+        <span asp-validation-for="User.UserName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="User.Email" class="control-label"></label>
+        <input asp-for="User.Email" class="form-control"/>
+        <span asp-validation-for="User.Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label for="newPassword" class="control-label">Nowe Hasło</label>
+        <input type="password" name="newPassword" class="form-control"/>
+        <span asp-validation-for="User.PasswordHash" class="text-danger"></span>
+    </div>
+    
+        <div class="form-group">
+        <label for="passwordExpirationDays" class="control-label">Ważność Hasła użytkownika</label>
+        <input type="number" name="passwordExpirationDays" value="@Model.UserSettings.PasswordExpirationDays" class="form-control"/>
+        <span asp-validation-for="UserSettings.PasswordExpirationDays" class="text-danger"></span>
+    </div>
+
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" asp-for="User.IsRestrictionsDisabled" checked="@Model.User.IsRestrictionsDisabled" id="flexCheckDefault">
+        <label class="form-check-label" for="flexCheckDefault">
+            Ograniczenia
+        </label>
+        <span asp-validation-for="User.IsRestrictionsDisabled" class="text-danger"></span>
+    </div>
+
+    <div class="form-group my-4">
+        <input type="submit" value="Zapisz" class="btn btn-primary"/>
+    </div>
+    
+</form>
+
+<div>
+    <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+</div>
+
+
+<style>
+    h1 {
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .text-danger {
+        font-weight: bold;
+    }
+</style>

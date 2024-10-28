@@ -1,0 +1,51 @@
+﻿@model UserManagement.ViewModels.AssignRolesViewModel
+@{
+    ViewData["Title"] = "Przypisz role do użytkownika";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="AssignRoles" method="post" class="mt-4">
+    <div class="form-group">
+        <label>Użytkownik:</label>
+        <div class="form-control-plaintext">
+            @Model.User.UserName
+        </div>
+        <input type="hidden" name="userId" value="@Model.User.Id" />
+    </div>
+
+    <div class="form-group">
+        <label>Rola:</label>
+        <select name="UserRoles" multiple class="form-control" style="height: 200px;">
+            @foreach (var role in Model.Roles)
+            {
+                <option value="@role.Name" selected="@Model.UserRoles.Contains(role.Name)">@role.Name</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Przypisz role</button>
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+</form>
+
+
+<style>
+    h2 {
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-control-plaintext {
+        padding: 0.375rem 0.75rem;
+        color: #495057;
+        background-color: #e9ecef;
+        border-radius: 0.25rem;
+    }
+
+    select[multiple] {
+        padding: 0.375rem 0.75rem;
+    }
+</style>

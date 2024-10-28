@@ -1,0 +1,80 @@
+﻿@model IEnumerable<UserManagement.ViewModels.UserWithRolesViewModel>
+
+@if (User.IsInRole("Admin"))
+{
+    <p>
+        <a class="button" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">Zmień hasło admina</a>
+    </p>
+
+    <p>
+        <a type="button" class="button" id="register" asp-area="Identity" asp-page="/Account/Register">Stwórz nowego użytkownika</a>
+    </p>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>UserName</th>
+                <th>Email</th>
+                <th>Rola</th> 
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@Html.DisplayFor(modelItem => item.User.UserName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.User.Email)</td>
+                        <td>
+                            @if (item.Roles != null && item.Roles.Any())
+                            {
+                                @string.Join(", ", item.Roles)
+                                
+                            }
+                            else
+                            {
+                                <span>Brak ról</span>
+                            }
+                        </td>
+                        <td>
+                            <a class="btn btn-success" asp-action="Modify" asp-route-id="@item.User.Id">Modyfikuj</a>
+                            @if (item.User.LockoutEnd != null && item.User.LockoutEnd > DateTimeOffset.UtcNow)
+                            {
+                                <form asp-action="Unlock" method="post">
+                                    <input type="hidden" name="userId" value="@item.User.Id" />
+                                    <button type="submit" class="btn btn-warning">Odblokuj</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Lock" method="post">
+                                    <input type="hidden" name="userId" value="@item.User.Id" />
+                                    <button type="submit" class="btn btn-danger">Zablokuj</button>
+                                </form>
+                            }
+                            <a class="btn btn-danger" asp-action="Delete" asp-route-id="@item.User.Id">Usuń</a>
+                        </td>
+                        <td>
+                            <a class="btn btn-primary" asp-action="AssignRoles" asp-controller="Users" asp-route-userId="@item.User.Id">Przypisz role</a>
+
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4">Brak użytkowników do wyświetlenia.</td> 
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>
+        <a class="button" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">Zmień hasło</a>
+    </p>
+}
