@@ -136,7 +136,16 @@ namespace UserManagement.Areas.Identity.Pages.Account
                     if (result.Succeeded)
                     {
                         await _userRepository.UpdateLastLogin(user.Id);
-                        _logService.CreateLog(user, "USER LOGIN", "SUCCESS", "User logged in");   
+                        _logService.CreateLog(user, "USER LOGIN", "SUCCESS", "User logged in");
+
+                        var authProperies = new AuthenticationProperties()
+                        {
+                            IsPersistent = Input.RememberMe,
+                            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(userSettings.SessionTimeout.Value),
+                        };
+                        
+                        await _signInManager.SignInAsync(user, authProperies);
+                        
                         _logger.LogInformation("User logged in.");
                         return LocalRedirect(returnUrl);
                     }

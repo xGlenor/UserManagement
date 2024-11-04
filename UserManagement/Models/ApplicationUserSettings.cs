@@ -9,4 +9,7 @@ public class ApplicationUserSettings
     
     [DefaultValue(30)]
     public int? PasswordExpirationDays { get; set; }
+    
+    [DefaultValue(60)]
+    public int? SessionTimeout { get; set; }
 }

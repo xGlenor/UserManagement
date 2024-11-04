@@ -100,7 +100,7 @@ public class UserController: Controller
   
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Modify(UserViewModel userModel, string newPassword, int passwordExpirationDays)
+    public async Task<IActionResult> Modify(UserViewModel userModel, string newPassword)
     {
         var existingUser = await _userRepository.GetByIdAsync(userModel.User.Id);
         var userSettings = await _userRepository.GetUserSettingsById(userModel.User.Id);
@@ -118,8 +118,8 @@ public class UserController: Controller
         existingUser.UserName = userModel.User.UserName;
         existingUser.IsRestrictionsDisabled = userModel.User.IsRestrictionsDisabled;
 
-        userSettings.PasswordExpirationDays = passwordExpirationDays;
-
+        userSettings.PasswordExpirationDays = userModel.UserSettings.PasswordExpirationDays;
+        userSettings.SessionTimeout = userModel.UserSettings.SessionTimeout;
 
         if (!string.IsNullOrEmpty(newPassword))
         {
@@ -370,6 +370,21 @@ public class UserController: Controller
             return null;
         return getUser.Result;
         
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateOneTimeToken(string userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if(user == null)
+            return NotFound();
+        
+        var x = new Random().Next(0, 999999);
+
+        var optToken = "dasdas";
+
+        return Ok();
     }
     
 }
