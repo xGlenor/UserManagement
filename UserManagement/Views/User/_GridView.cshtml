@@ -1,0 +1,31 @@
+﻿@model ICollection<Logg>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <td>Id</td>
+        <td>Username</td>
+        <td>UserId</td>
+        <td>Status</td>
+        <td>Action</td>
+        <td>Message</td>
+        <td>Created</td>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        var itemBG = (item.Status.Equals("ERROR")) ? "table-danger" : "table-success";
+                    
+        <tr class="@itemBG">
+            <td>@item.Id</td>
+            <td>@item.UserName</td>
+            <td>@item.UserId</td>
+            <td>@item.Status</td>
+            <td>@item.Action</td>
+            <td style="word-wrap: break-word;">@item.Message</td>
+            <td>@item.AtCreated.Value.ToString("dd.m.yyyy HH:mm")</td>
+        </tr>
+    }
+    </tbody>
+</table>

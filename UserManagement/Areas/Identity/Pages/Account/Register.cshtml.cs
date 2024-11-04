@@ -11,8 +11,10 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
 using UserManagement.Models;
 using UserManagement.Repository;
+using UserManagement.Services;
 
 namespace UserManagement.Areas.Identity.Pages.Account
 {
@@ -26,6 +28,7 @@ namespace UserManagement.Areas.Identity.Pages.Account
         private readonly IEmailSender _emailSender;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserRepository _userRepository;
+        private readonly ILogService _logService;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
@@ -34,7 +37,7 @@ namespace UserManagement.Areas.Identity.Pages.Account
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
             RoleManager<IdentityRole> roleManager, 
-            IUserRepository userRepository)
+            IUserRepository userRepository, ILogService logService)
 
         {
             _userManager = userManager;
@@ -45,6 +48,7 @@ namespace UserManagement.Areas.Identity.Pages.Account
             _emailSender = emailSender;
             _roleManager = roleManager;
             _userRepository = userRepository;
+            _logService = logService;
         }
 
         /// <summary>
@@ -128,6 +132,7 @@ namespace UserManagement.Areas.Identity.Pages.Account
                 
                 if (result.Succeeded)
                 {
+                    _logService.CreateLog(user, "USER REGISTER", "SUCCESS", $"User {user.UserName} registered successfully with password."); 
                     _logger.LogInformation("User created a new account with password.");
 
                     string roleName = "User"; 
@@ -148,6 +153,9 @@ namespace UserManagement.Areas.Identity.Pages.Account
 
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    
+                    _logService.CreateLog(user, "USER REGISTER EMAIL", "SUCCESS", $"User {user.UserName} received mail with register."); 
+                    
 
                     await _userRepository.CreatePasswordHistory(user);
                     await _userRepository.CreateUserSettings(user);
@@ -162,6 +170,8 @@ namespace UserManagement.Areas.Identity.Pages.Account
                         return LocalRedirect(returnUrl);
                     }
                 }
+                var errors = string.Join($"User: {user.UserName ?? user.Id }\n", result.Errors.Select(e => e.Description));
+                _logService.CreateLog(user, "REGISTER USER", "ERROR", errors);
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);

@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Data;
+using UserManagement.Helper;
 using UserManagement.Models;
+using UserManagement.Services;
+using LogHelper = Microsoft.IdentityModel.Logging.LogHelper;
 
 namespace UserManagement.Repository;
 
@@ -9,11 +12,13 @@ public class UserRepository : IUserRepository
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly AppDbContext _appDbContext;
+    private readonly ILogService _logService;
 
-    public UserRepository(UserManager<ApplicationUser> userManager, AppDbContext appDbContext)
+    public UserRepository(UserManager<ApplicationUser> userManager, AppDbContext appDbContext, ILogService logService)
     {
         _userManager = userManager;
         _appDbContext = appDbContext;
+        this._logService = logService;
     }
 
 
@@ -38,7 +43,11 @@ public class UserRepository : IUserRepository
         var user = await _userManager.FindByIdAsync(id);
         if (user != null)
         {
-            await _userManager.DeleteAsync(user);
+            var deletedResult = await _userManager.DeleteAsync(user);
+            if (deletedResult.Succeeded)
+            {
+                
+            }
         }
     }
 

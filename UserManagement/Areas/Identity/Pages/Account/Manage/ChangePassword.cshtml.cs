@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using UserManagement.Models;
 using UserManagement.Repository;
+using UserManagement.Services;
 
 namespace UserManagement.Areas.Identity.Pages.Account.Manage
 {
@@ -21,16 +22,18 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<ChangePasswordModel> _logger;
         private readonly IUserRepository _userRepository;
+        private readonly ILogService _logService;
 
         public ChangePasswordModel(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<ChangePasswordModel> logger, IUserRepository userRepository)
+            ILogger<ChangePasswordModel> logger, IUserRepository userRepository, ILogService logService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             _userRepository = userRepository;
+            _logService = logService;
         }
 
         /// <summary>
@@ -109,12 +112,15 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
+                _logService.CreateLog(user, "CHANGE PASSWORD","ERROR",$"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
             var changePasswordResult = await _userManager.ChangePasswordAsync(user, Input.OldPassword, Input.NewPassword);
             if (!changePasswordResult.Succeeded)
             {
+                var errors = string.Join($"User: {user.UserName ?? user.Id }\n", changePasswordResult.Errors.Select(e => e.Description));
+                _logService.CreateLog(user, "CHANGE PASSWORD","ERROR",errors);
                 foreach (var error in changePasswordResult.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -127,7 +133,7 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
             await _signInManager.RefreshSignInAsync(user);
             _logger.LogInformation("User changed their password successfully.");
             StatusMessage = "Your password has been changed.";
-
+            _logService.CreateLog(user, "CHANGE PASSWORD","SUCCESS",$"User {user.UserName} password has been changed.");
             return RedirectToPage();
         }
     }

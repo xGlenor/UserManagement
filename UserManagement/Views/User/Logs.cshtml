@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Logs";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="form-inline pull-right">
+            <label for="txtSearch">Search</label>
+            <input id="txtSearch" type="text" class="form-control" placeholder="Search" />
+        </div>
+    </div>
+    <div class="col-sm-12">
+        <div id="gridLogs"></div>
+    </div>
+</div>
+
+
+@section Scripts{
+    <script>
+    $(() => {
+       getLogs();
+
+       $('#txtSearch').on('keyup', function() {
+           getLogs();
+       });
+    });
+    
+    function getLogs() {
+        $.ajax({
+          url: '@Url.Action("SearchLogs", "User")',
+          datatype: 'html',
+          method: 'GET',
+          data: { searchText: $('#txtSearch').val() },
+          success: function (data) {
+            $('#gridLogs').html('').html(data);
+          },
+          error: function (error) {
+            console.log(error);
+          }
+        })
+    
+    }
+    
+</script>
+}

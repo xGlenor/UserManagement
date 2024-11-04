@@ -13,18 +13,21 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using UserManagement.Models;
 using UserManagement.Repository;
+using UserManagement.Services;
 
 namespace UserManagement.Areas.Identity.Pages.Account
 {
     public class ResetPasswordModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IUserRepository userRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly ILogService _logService;
 
-        public ResetPasswordModel(UserManager<ApplicationUser> userManager, IUserRepository userRepository)
+        public ResetPasswordModel(UserManager<ApplicationUser> userManager, IUserRepository userRepository, ILogService logService)
         {
             _userManager = userManager;
-            this.userRepository = userRepository;
+            this._userRepository = userRepository;
+            _logService = logService;
         }
 
         /// <summary>
@@ -116,6 +119,8 @@ namespace UserManagement.Areas.Identity.Pages.Account
                     {
                         ModelState.AddModelError(string.Empty, error.Description);
                     }
+                    var errors = string.Join($"User: {user.UserName ?? user.Id }\n", validationResult.Errors.Select(e => e.Description));
+                    _logService.CreateLog(user, "RESET PASSWORD", "ERROR", errors);
                     return Page(); // Wróć do formularza resetowania hasła z błędami
                 }
             }
@@ -123,11 +128,13 @@ namespace UserManagement.Areas.Identity.Pages.Account
             var result = await _userManager.ResetPasswordAsync(user, Input.Code, Input.Password);
             if (result.Succeeded)
             {
-                await userRepository.CreatePasswordHistory(user);
-                await userRepository.UpdateLastLogin(user.Id);
+                await _userRepository.CreatePasswordHistory(user);
+                await _userRepository.UpdateLastLogin(user.Id);
+                _logService.CreateLog(user, "RESET PASSWORD", "SUCCESS", "User password reset successfully. User have to confirm your password.");
                 return RedirectToPage("./ResetPasswordConfirmation");
             }
-
+            var resultErrors = string.Join($"User: {user.UserName ?? user.Id }\n", result.Errors.Select(e => e.Description));
+            _logService.CreateLog(user, "RESET PASSWORD", "ERROR", resultErrors);
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);

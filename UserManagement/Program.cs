@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Data;
+using UserManagement.Helper;
 using UserManagement.Models;
 using UserManagement.Repository;
 using UserManagement.Services;
@@ -36,6 +37,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 1;
         options.Password.RequiredUniqueChars = 1;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 3;
     }).AddPasswordValidator<CustomPasswordValidator>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -74,6 +77,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ILoggRepository, LoggRepository>();
+builder.Services.AddScoped<ILogService, LogService>();
 
 /*
 |--------------------------------------------------------------------------
@@ -96,8 +101,6 @@ using (var scopeRoles = app.Services.CreateScope())
     await AdminAndUserInitializer.InitializeAsync(serviceProvider);
 }
 
-
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -107,7 +110,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.MapRazorPages();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();

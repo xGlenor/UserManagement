@@ -5,11 +5,13 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using UserManagement.Helper;
 using UserManagement.Models;
 using UserManagement.Repository;
+using UserManagement.Services;
 
 namespace UserManagement.Areas.Identity.Pages.Account
 {
@@ -19,13 +21,15 @@ namespace UserManagement.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserRepository _userRepository;
         private readonly ILogger<LoginModel> _logger;
+        private readonly ILogService _logService;
 
-        public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger, IUserRepository userRepository, UserManager<ApplicationUser> userManager)
+        public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger, IUserRepository userRepository, UserManager<ApplicationUser> userManager, ILogService logService)
         {
             _signInManager = signInManager;
             _logger = logger;
             _userRepository = userRepository;
             _userManager = userManager;
+            _logService = logService;
         }
 
         /// <summary>
@@ -123,14 +127,16 @@ namespace UserManagement.Areas.Identity.Pages.Account
                     
                     if (user.LastLogin.HasValue && userSettings != null && UserHelper.GetLastLoginDays(user.LastLogin.Value) > userSettings.PasswordExpirationDays)
                     {
+                        _logService.CreateLog(user, "USER LOGIN", "ERROR", "User password expired or first login");   
                         ModelState.AddModelError(string.Empty, "Your Password has Expired or First login. You have to reset your password.");
                         return Page();
                     }
                     
-                    var result = await _signInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                    var result = await _signInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: true);
                     if (result.Succeeded)
                     {
                         await _userRepository.UpdateLastLogin(user.Id);
+                        _logService.CreateLog(user, "USER LOGIN", "SUCCESS", "User logged in");   
                         _logger.LogInformation("User logged in.");
                         return LocalRedirect(returnUrl);
                     }
@@ -140,13 +146,15 @@ namespace UserManagement.Areas.Identity.Pages.Account
                     }
                     if (result.IsLockedOut)
                     {
+                        _logService.CreateLog(user, "USER LOGIN", "ERROR", "User acccount locked out.");   
                         _logger.LogWarning("User account locked out.");
                         return RedirectToPage("./Lockout");
                     }
-                    
+                    _logService.CreateLog(user, "USER LOGIN", "ERROR", "User password is incorrect.");   
                     ModelState.AddModelError(string.Empty, "Login lub Hasło niepoprawny");
                     return Page();
                 }
+                  
                 ModelState.AddModelError(string.Empty, "Login lub Hasło niepoprawny");
                 return Page();
             }

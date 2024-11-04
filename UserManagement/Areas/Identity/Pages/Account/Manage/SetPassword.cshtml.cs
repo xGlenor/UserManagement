@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using UserManagement.Models;
 using UserManagement.Repository;
+using UserManagement.Services;
 
 namespace UserManagement.Areas.Identity.Pages.Account.Manage
 {
@@ -18,14 +19,16 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IUserRepository _userRepository;
+        private readonly ILogService _logService;
 
         public SetPasswordModel(
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager, IUserRepository userRepository)
+            SignInManager<ApplicationUser> signInManager, IUserRepository userRepository, ILogService logService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _userRepository = userRepository;
+            _logService = logService;
         }
 
         /// <summary>
@@ -96,12 +99,15 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
+                _logService.CreateLog(user, "SET PASSWORD","ERROR",$"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
             var addPasswordResult = await _userManager.AddPasswordAsync(user, Input.NewPassword);
             if (!addPasswordResult.Succeeded)
             {
+                var errors = string.Join($"User: {user.UserName ?? user.Id }\n", addPasswordResult.Errors.Select(x => x.Description));
+                _logService.CreateLog(user, "SET PASSWORD","ERROR",errors);
                 foreach (var error in addPasswordResult.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -111,7 +117,7 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
             await _userRepository.UpdateLastLogin(user.Id);
             await _signInManager.RefreshSignInAsync(user);
             StatusMessage = "Your password has been set.";
-
+            _logService.CreateLog(user, "SET PASSWORD","SUCCESS",$"User {user.UserName} password has been set.");
             return RedirectToPage();
         }
     }

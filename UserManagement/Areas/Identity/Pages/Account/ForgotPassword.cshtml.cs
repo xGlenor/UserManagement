@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using UserManagement.Models;
+using UserManagement.Services;
 
 namespace UserManagement.Areas.Identity.Pages.Account
 {
@@ -21,11 +22,13 @@ namespace UserManagement.Areas.Identity.Pages.Account
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly ILogService _logService;
 
-        public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender emailSender)
+        public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender emailSender, ILogService logService)
         {
             _userManager = userManager;
             _emailSender = emailSender;
+            _logService = logService;
         }
 
         /// <summary>
@@ -71,6 +74,8 @@ namespace UserManagement.Areas.Identity.Pages.Account
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
 
+                _logService.CreateLog(user, "USER FORGOT PASSWORD", "SUCCESS", $"User forgot password."); 
+                
                 await _emailSender.SendEmailAsync(
                     Input.Email,
                     "Reset Password",
