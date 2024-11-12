@@ -23,17 +23,19 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
         private readonly ILogger<ChangePasswordModel> _logger;
         private readonly IUserRepository _userRepository;
         private readonly ILogService _logService;
+        private readonly IConfiguration _configuration;
 
         public ChangePasswordModel(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<ChangePasswordModel> logger, IUserRepository userRepository, ILogService logService)
+            ILogger<ChangePasswordModel> logger, IUserRepository userRepository, ILogService logService, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             _userRepository = userRepository;
             _logService = logService;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -109,6 +111,12 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
                 return Page();
             }
 
+            string googleToken = Request.Form["g-recaptcha-response"].ToString();
+            
+            string secretKey = _configuration["ReCaptchaSettings:SecretKey"]!;
+            string verificationUrl = _configuration["ReCaptchaSettings:VerificationUrl"]!;
+            bool isValid = await CaptchaService.VerifyReCaptchaV3(googleToken, secretKey, verificationUrl);
+            
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
@@ -116,6 +124,12 @@ namespace UserManagement.Areas.Identity.Pages.Account.Manage
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
+            if (!isValid)
+            {
+                _logService.CreateLog(user, "CHANGE PASSWORD","ERROR","Unverified captcha response.");
+                return Page();
+            }
+            
             var changePasswordResult = await _userManager.ChangePasswordAsync(user, Input.OldPassword, Input.NewPassword);
             if (!changePasswordResult.Succeeded)
             {

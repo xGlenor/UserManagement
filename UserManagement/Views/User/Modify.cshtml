@@ -78,6 +78,10 @@
             }
         }
     }
+
+    <div class="my-3">
+        <a asp-action="GenerateOneTimeToken" asp-route-userId="@Model.User.Id" class="btn btn-success">Generuj haslo jednorazowe</a>
+    </div>
     
     <div>
         <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>

@@ -86,6 +86,10 @@ namespace UserManagement.Areas.Identity.Pages.Account
             /// </summary>
             [Display(Name = "Remember me?")]
             public bool RememberMe { get; set; }
+            
+            [Required]
+            [DataType(DataType.Text)]
+            public string Answer { get; set; }
         }
 
         public async Task OnGetAsync(string returnUrl = null)
@@ -115,6 +119,13 @@ namespace UserManagement.Areas.Identity.Pages.Account
             {
                 var user = await _userManager.FindByNameAsync(Input.UserName);
                
+                var correctAnswer = HttpContext.Session.GetString("CaptchaAnswer");
+                if (!string.Equals(Input.Answer, correctAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logService.CreateLog(user, "USER LOGIN", "ERROR", "Captcha is not correct");   
+                    ModelState.AddModelError(string.Empty, "Captcha is not correct.");
+                    return Page();
+                }
 
                 if (user != null)
                 {
@@ -145,6 +156,13 @@ namespace UserManagement.Areas.Identity.Pages.Account
                         };
                         
                         await _signInManager.SignInAsync(user, authProperies);
+
+                        if (user.IsOneTimePasswordEnabled)
+                        {
+                            user.LastLogin = DateTime.Now.AddDays(-31);
+                            user.IsOneTimePasswordEnabled = false;
+                            await _userManager.UpdateAsync(user);
+                        }
                         
                         _logger.LogInformation("User logged in.");
                         return LocalRedirect(returnUrl);

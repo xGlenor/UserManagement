@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UserManagement.Models;
@@ -17,13 +18,15 @@ public class UserController: Controller
     private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
     private readonly Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> _roleManager;
     private readonly ILogService _logService;
+    private readonly IEmailSender _emailSender;
     
-    public UserController(IUserRepository userRepository, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, ILogService logService)
+    public UserController(IUserRepository userRepository, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, ILogService logService, IEmailSender emailSender)
     {
         _userRepository = userRepository;
         _userManager = userManager;
         _roleManager = roleManager;
         _logService = logService;
+        _emailSender = emailSender;
     }
 
     
@@ -277,7 +280,6 @@ public class UserController: Controller
     {
         var logs = _logService.GetLogs();
         
-
         return View(logs);
     }
 
@@ -371,20 +373,40 @@ public class UserController: Controller
         return getUser.Result;
         
     }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
+    
     public async Task<IActionResult> GenerateOneTimeToken(string userId)
     {
         var user = await _userRepository.GetByIdAsync(userId);
         if(user == null)
             return NotFound();
         
-        var x = new Random().Next(0, 999999);
+        user.IsRestrictionsDisabled = true;
+        
+        var x = new Random().Next(1, 20);
+        var a = user.UserName.Length;
 
-        var optToken = "dasdas";
+        var oneTimeToken = (a/x).ToString("F4").Replace(",", "");
 
-        return Ok();
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        
+        var resetToken = await _userManager.ResetPasswordAsync(user, token, oneTimeToken );
+        
+        if (resetToken.Succeeded)
+        {
+            //TODO
+            await _emailSender.SendEmailAsync(user.Email, "Reset Password",
+                $"Hasło: {oneTimeToken}, liczba: {x}, token: {token} \n");
+            user.IsRestrictionsDisabled = false;
+            user.IsOneTimePasswordEnabled = true;
+            await _userManager.UpdateAsync(user);
+            _logService.CreateLog(user, "GENERATE TOKEN", "SUCCESS", "OneTime password generated successfully");
+            return RedirectToAction(nameof(Index));
+        }
+
+        var errors = string.Join(',', resetToken.Errors.Select(e => e.Description));
+        _logService.CreateLog(user, "GENERATE TOKEN", "ERROR", errors);
+        
+        return RedirectToAction(nameof(Index));
     }
     
 }

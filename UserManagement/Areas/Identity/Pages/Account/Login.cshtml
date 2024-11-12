@@ -26,6 +26,14 @@
                             <span asp-validation-for="Input.Password" class="text-danger"></span>
                         </div>
 
+                        <img src="@Url.Action("GetCaptchaImage", "Captcha")" class="my-1" alt=""/>
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.Answer" class="form-control" autocomplete="answer" aria-required="true" placeholder="Odpowiedź"/>
+                            <label asp-for="Input.Answer">Odpowiedź</label>
+                            <span asp-validation-for="Input.Answer" class="text-danger"></span>
+                        </div>
+                        
+
                         <div class="form-check mb-3">
                             <input class="form-check-input" asp-for="Input.RememberMe" />
                             <label class="form-check-label" asp-for="Input.RememberMe">
@@ -42,8 +50,7 @@
                                 }
                             </div>
                         }
-
-
+                        
                         <div>
                             <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
                         </div>
